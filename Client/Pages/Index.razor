@@ -1,0 +1,50 @@
+﻿@page "/"
+@using System.Net.Http.Headers;
+@using BlazorAppFileUpload.Shared.Model;
+@inject HttpClient client;
+
+
+<PageTitle>Index</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<SurveyPrompt Title="How is Blazor working for you?" />
+
+
+
+<InputFile OnChange="@InputHandle" multiple />
+
+
+
+@code {
+
+
+    private int maxAllowedFiles =2;
+    private long maxFileSize = 1024 * 15;
+
+
+    private async Task InputHandle(InputFileChangeEventArgs e)
+    {
+        using var content = new MultipartFormDataContent();
+
+        foreach (var item in e.GetMultipleFiles(maxAllowedFiles))
+        {
+            var fileContent = new StreamContent(item.OpenReadStream());
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
+
+            content.Add(
+                content: fileContent,
+                name: "\"files\"",
+                fileName: item.Name
+            );
+        }
+
+        var respose = await client.PostAsync("/api/Upload", content);
+
+        var result = await respose.Content.ReadFromJsonAsync<List<UploadResult>>();
+    }
+
+
+}
